@@ -4,16 +4,16 @@
       <div class="vampire-die-column"/>
 
       <div class="vampire-die-column">
-        <img src="../img/vampire-black.png" class="die-icon"/>
-        <div class="die-text">
+        <div class="die-icon normal"/>
+        <div>
           <p>Normal Dice</p>
           <input type="number" min="0" max="99" v-model="nBlack"/>
         </div>
       </div>
 
       <div class="vampire-die-column">
-        <img src="../img/vampire-red.png" class="die-icon"/>
-        <div class="die-text">
+        <div class="die-icon hunger"/>
+        <div>
           <p>Hunger Dice</p>
           <input type="number" min="0" max="99" v-model="nRed"/>
         </div>
@@ -46,11 +46,18 @@
 <style scoped>
 
   .die-icon {
-    flex: 4;
+    height: 128px;
+    background-repeat: no-repeat;
+    background-position: center;
+    padding-left: 120px;
   }
 
-  .die-text {
-    flex: 1;
+  .normal {
+    background-image: url("../img/vampire-black.png");
+  }
+
+  .hunger {
+    background-image: url("../img/vampire-red.png");
   }
 
   .vampire-dice-symbols {
@@ -60,8 +67,13 @@
 
   .vampire-die-column {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    width: 128px;
+  }
+
+  input {
+    width: 33%;
+  }
+
+  * {
+    text-align: center;
   }
 </style>

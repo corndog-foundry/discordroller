@@ -16,6 +16,8 @@
 
       <StarWarsRoller
         v-if="selectedType === 'Star Wars / Genesys'"
+        @event:StandardRoll="starWarsRoll"
+        @event:ForceRoll="starWarsForceRoll"
       />
 
       <VampireRoller
@@ -194,6 +196,316 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         })
+      },
+      expandRollFormula: function (rollFormula, expansion) {
+        if (rollFormula !== '') {
+          rollFormula += ` + ${expansion}`;
+          return rollFormula;
+        } else {
+          return expansion;
+        }
+      },
+      starWarsRoll: function (nBlue, nGreen, nYellow, nBlack, nPurple, nRed) {
+        let successes = 0;
+        let advantages = 0;
+        let triumph = false;
+        let despair = false;
+
+        let blueRollsOut = [];
+        let greenRollsOut = [];
+        let yellowRollsOut = [];
+        let blackRollsOut = [];
+        let purpleRollsOut = [];
+        let redRollsOut = [];
+
+        let fields = [];
+
+        let rollFormula = '';
+
+        if (nBlue > 0) {
+          for (let i = 0; i < nBlue; i++) {
+            switch(this.generate(6)) {
+              case 1:
+              case 2:
+                blueRollsOut.push('B');
+                break;
+              case 3:
+                blueRollsOut.push('S');
+                successes++;
+                break;
+              case 4:
+                blueRollsOut.push('SA');
+                successes++;
+                advantages++;
+                break;
+              case 5:
+                blueRollsOut.push('AA');
+                advantages += 2;
+                break;
+              case 6:
+                blueRollsOut.push('A');
+                advantages++;
+                break;
+            }
+          }
+
+          fields.push({name: "Boost Rolls", value: blueRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nBlue} blue`);
+        }
+
+        if (nBlack > 0) {
+          for (let i = 0; i < nBlack; i++) {
+            switch(this.generate(8)) {
+              case 1:
+              case 2:
+                blackRollsOut.push('B');
+                break;
+              case 3:
+              case 4:
+                blackRollsOut.push('F');
+                successes--;
+                break;
+              case 5:
+              case 6:
+                blueRollsOut.push('T');
+                advantages--;
+                break;
+            }
+          }
+
+          fields.push({name: "Setback Rolls", value: blackRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nBlack} black`);
+        }
+
+        if (nGreen > 0) {
+          for (let i = 0; i < nGreen; i++) {
+            switch(this.generate(8)) {
+              case 1:
+                greenRollsOut.push('B');
+                break;
+              case 2:
+              case 3:
+                greenRollsOut.push('S');
+                successes++;
+                break;
+              case 4:
+                greenRollsOut.push('SS');
+                successes += 2;
+                break;
+              case 5:
+              case 6:
+                greenRollsOut.push('A');
+                advantages++;
+                break;
+              case 7:
+                greenRollsOut.push('SA');
+                successes++;
+                advantages++;
+                break;
+              case 8:
+                greenRollsOut.push('AA');
+                advantages += 2;
+                break;
+            }
+          }
+
+          fields.push({name: "Ability Rolls", value: greenRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nGreen} green`);
+        }
+
+        if (nPurple > 0) {
+          for (let i = 0; i < nPurple; i++) {
+            switch (this.generate(8)) {
+              case 1:
+                purpleRollsOut.push('B');
+                break;
+              case 2:
+                purpleRollsOut.push('F');
+                successes--;
+                break;
+              case 3:
+                purpleRollsOut.push('FF');
+                successes -= 2;
+                break;
+              case 4:
+              case 5:
+              case 6:
+                purpleRollsOut.push('T');
+                advantages--;
+                break;
+              case 7:
+                purpleRollsOut.push('TT');
+                advantages -= 2;
+                break;
+              case 8:
+                purpleRollsOut.push('FT');
+                successes--;
+                advantages--;
+                break;
+            }
+          }
+
+          fields.push({name: "Difficulty Rolls", value: purpleRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nPurple} purple`);
+        }
+
+        if (nYellow > 0) {
+          for (let i = 0; i < nYellow; i++) {
+            switch (this.generate(12)) {
+              case 1:
+                yellowRollsOut.push('B');
+                break;
+              case 2:
+              case 3:
+                yellowRollsOut.push('S');
+                successes++;
+                break;
+              case 4:
+              case 5:
+                yellowRollsOut.push('SS');
+                successes += 2;
+                break;
+              case 6:
+                yellowRollsOut.push('A');
+                advantages++;
+                break;
+              case 7:
+              case 8:
+              case 9:
+                yellowRollsOut.push('SA');
+                successes++;
+                advantages++;
+                break;
+              case 10:
+              case 11:
+                yellowRollsOut.push('AA');
+                advantages += 2;
+                break;
+              case 12:
+                yellowRollsOut.push('Tr');
+                triumph = true;
+                break;
+            }
+          }
+
+          fields.push({name: "Proficiency Rolls", value: yellowRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nYellow} yellow`);
+        }
+
+        if (nRed > 0) {
+          for (let i = 0; i < nRed; i++) {
+            switch (this.generate(12)) {
+              case 1:
+                redRollsOut.push('B');
+                break;
+              case 2:
+              case 3:
+                redRollsOut.push('F');
+                successes--;
+                break;
+              case 4:
+              case 5:
+                redRollsOut.push('FF');
+                successes -= 2;
+                break;
+              case 6:
+              case 7:
+                redRollsOut.push('T');
+                advantages--;
+                break;
+              case 8:
+              case 9:
+                redRollsOut.push('FT');
+                successes--;
+                advantages--;
+                break;
+              case 10:
+              case 11:
+                redRollsOut.push('TT');
+                advantages -= 2;
+                break;
+              case 12:
+                redRollsOut.push('D');
+                despair = false;
+                break;
+            }
+          }
+
+          fields.push({name: "Challenge Rolls", value: redRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nRed} red`);
+        }
+
+        if (triumph) fields.push({name: "Triumph?", value: "Yes"});
+        if (despair) fields.push({name: "Despair?", value: "Yes"});
+
+        let sResult = successes > 0 ? `${successes} successes` : `${Math.abs(successes)} failures`;
+        let aResult = advantages > 0 ? `${advantages} advantages` : `${Math.abs(advantages)} threats`;
+
+        rollFormula += ` = ${sResult} + ${aResult}`;
+
+        const payload = {
+          embeds: [
+            {
+              title: `${this.userNick} rolled: ${rollFormula}`,
+              fields: fields
+            }
+          ]
+        };
+
+        this.pushPayload(payload);
+      },
+      starWarsForceRoll: function (nWhite) {
+        let darkSidePoints = 0;
+        let lightSidePoints = 0;
+
+        let whiteRollsOut = [];
+
+        for (let i = 0; i < nWhite; i++) {
+          switch (this.generate(12)) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+              whiteRollsOut.push('D');
+              darkSidePoints++;
+              break;
+            case 7:
+              whiteRollsOut.push('DD');
+              darkSidePoints += 2;
+              break;
+            case 8:
+            case 9:
+              whiteRollsOut.push('L');
+              lightSidePoints++;
+              break;
+            case 10:
+            case 11:
+            case 12:
+              whiteRollsOut.push('LL');
+              lightSidePoints += 2;
+              break;
+          }
+        }
+
+        let rollFormula = `${nWhite} force = ${darkSidePoints} dark + ${lightSidePoints} light`;
+
+        const payload = {
+          embeds: [
+            {
+              title: `${this.userNick} rolled: ${rollFormula}`,
+              fields: [
+                {
+                  name: "Rolls",
+                  value: whiteRollsOut.toString()
+                }
+              ]
+            }
+          ]
+        };
+
+        this.pushPayload(payload);
       }
     }
   }
