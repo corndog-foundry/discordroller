@@ -1,10 +1,22 @@
 <template>
-  <div id="app">
+  <div id="app" :class="{ dark: darkTheme, light: !darkTheme }">
     <h1>Discord Roller</h1>
+    <VersionText
+        v-if="!keyInput"
+        :version="version"
+    />
+
     <div v-if="keyInput">
-      <select v-model="selectedType">
-        <option v-for="type in diceTypes" :key="type">{{ type }}</option>
-      </select>
+      <label>
+        Roll Type:
+        <select v-model="selectedType">
+          <option v-for="type in diceTypes" :key="type">{{ type }}</option>
+        </select>
+      </label>
+      <label>
+        Roll Context:
+        <input type="text" v-model="rollContext"/>
+      </label>
 
       <hr>
 
@@ -37,9 +49,13 @@
   import Roller from "@/components/Roller";
   import StarWarsRoller from "@/components/StarWarsRoller";
   import VampireRoller from "@/components/VampireRoller";
+  import VersionText from "@/components/VersionText";
+  import { version } from '../package.json';
+
   export default {
     name: 'App',
     components: {
+      VersionText,
       VampireRoller,
       StarWarsRoller,
       Roller,
@@ -55,13 +71,18 @@
             'Star Wars / Genesys',
             'Vampire the Masquerade 5e'
         ],
-        selectedType: 'Standard'
+        selectedType: 'Standard',
+        verboseMode: false,
+        rollContext: '',
+        version: version,
+        darkTheme: false
       }
     },
     methods: {
-      receiveDiscordKey: function (newKey, newNick) {
+      receiveDiscordKey: function (newKey, newNick, newVerboseMode) {
         this.discordKey = newKey;
         this.userNick = newNick;
+        this.verboseMode = newVerboseMode;
         this.keyInput = true;
       },
       standardRoll: function (numDice, numSides, bonus) {
@@ -80,21 +101,10 @@
 
         rollFormula += ` = ${result}`
 
-        const payload = {
-          embeds: [
-            {
-              title: `${this.userNick} rolled: ${rollFormula}`,
-              fields: [
-                {
-                  name: "Rolls",
-                  value: rolls.toString()
-                }
-              ]
-            }
-          ]
-        };
+        let fields = [];
+        if (this.verboseMode) fields = [{ name: "Rolls", value: rolls.toString() }]
 
-        this.pushPayload(payload);
+        this.buildAndPushPayload(rollFormula, fields);
       },
       vampireRoll: function (numBlackDice, numRedDice) {
         let blackRolls = [];
@@ -159,30 +169,22 @@
 
         let rollFormula = '';
 
-        if (numRedDice > 0 && numBlackDice > 0) rollFormula = `${numBlackDice} black + ${numRedDice} red = `
-        else if (numBlackDice > 0) rollFormula = `${numBlackDice} black = `
-        else if (numRedDice > 0) rollFormula = `${numRedDice} red = `
+        if (numBlackDice > 0) rollFormula = this.expandRollFormula(rollFormula, `${numBlackDice} :black_circle:`);
+        if (numRedDice > 0) rollFormula = this.expandRollFormula(rollFormula, `${numRedDice} :red_circle:`);
 
-        rollFormula += `${successes} successes`
+        rollFormula += ` = ${successes} successes.`;
 
         const fields = [];
 
-        if (numBlackDice > 0) fields.push({name: "Black Rolls", value: blackRollsOut.toString()})
-        if (numRedDice > 0) fields.push({name: "Red Rolls", value: redRollsOut.toString()})
+        if (this.verboseMode) {
+          if (numBlackDice > 0) fields.push({name: "Black Rolls", value: blackRollsOut.toString()})
+          if (numRedDice > 0) fields.push({name: "Red Rolls", value: redRollsOut.toString()})
+        }
 
         if (messyCritical) fields.push({name: "Messy Critical?", value: "Yes"})
         if (bestialFailure) fields.push({name: "Bestial Failure?", value: "Yes"})
 
-        const payload = {
-          embeds: [
-            {
-              title: `${this.userNick} rolled: ${rollFormula}`,
-              fields: fields
-            }
-          ]
-        };
-
-        this.pushPayload(payload);
+        this.buildAndPushPayload(rollFormula, fields);
       },
       generate: function (max) {
         return 1 + Math.floor(Math.random() * max);
@@ -249,8 +251,8 @@
             }
           }
 
-          fields.push({name: "Boost Rolls", value: blueRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nBlue} blue`);
+          if (this.verboseMode) fields.push({name: "Boost Rolls", value: blueRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nBlue} :blue_circle:`);
         }
 
         if (nBlack > 0) {
@@ -273,8 +275,8 @@
             }
           }
 
-          fields.push({name: "Setback Rolls", value: blackRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nBlack} black`);
+          if (this.verboseMode) fields.push({name: "Setback Rolls", value: blackRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nBlack} :black_circle:`);
         }
 
         if (nGreen > 0) {
@@ -309,8 +311,8 @@
             }
           }
 
-          fields.push({name: "Ability Rolls", value: greenRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nGreen} green`);
+          if (this.verboseMode) fields.push({name: "Ability Rolls", value: greenRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nGreen} :green_circle:`);
         }
 
         if (nPurple > 0) {
@@ -345,8 +347,8 @@
             }
           }
 
-          fields.push({name: "Difficulty Rolls", value: purpleRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nPurple} purple`);
+          if (this.verboseMode) fields.push({name: "Difficulty Rolls", value: purpleRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nPurple} :purple_circle:`);
         }
 
         if (nYellow > 0) {
@@ -388,8 +390,8 @@
             }
           }
 
-          fields.push({name: "Proficiency Rolls", value: yellowRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nYellow} yellow`);
+          if (this.verboseMode) fields.push({name: "Proficiency Rolls", value: yellowRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nYellow} :yellow_circle:`);
         }
 
         if (nRed > 0) {
@@ -431,8 +433,8 @@
             }
           }
 
-          fields.push({name: "Challenge Rolls", value: redRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nRed} red`);
+          if (this.verboseMode) fields.push({name: "Challenge Rolls", value: redRollsOut.toString()})
+          rollFormula = this.expandRollFormula(rollFormula, `${nRed} :red_circle:`);
         }
 
         if (triumph) fields.push({name: "Triumph?", value: "Yes"});
@@ -443,16 +445,7 @@
 
         rollFormula += ` = ${sResult} + ${aResult}`;
 
-        const payload = {
-          embeds: [
-            {
-              title: `${this.userNick} rolled: ${rollFormula}`,
-              fields: fields
-            }
-          ]
-        };
-
-        this.pushPayload(payload);
+        this.buildAndPushPayload(rollFormula, fields);
       },
       starWarsForceRoll: function (nWhite) {
         let darkSidePoints = 0;
@@ -491,20 +484,25 @@
 
         let rollFormula = `${nWhite} force = ${darkSidePoints} dark + ${lightSidePoints} light`;
 
-        const payload = {
+        let fields = []
+        if (this.verboseMode) fields = [{ name: "Rolls", value: whiteRollsOut.toString() }]
+
+        this.buildAndPushPayload(rollFormula, fields);
+      },
+      buildPayload: function (rollFormula, fields) {
+        let title = this.rollContext !== '' ? `${this.userNick} rolled ${this.rollContext}: ${rollFormula}` : `${this.userNick} rolled: ${rollFormula}`
+
+        return {
           embeds: [
             {
-              title: `${this.userNick} rolled: ${rollFormula}`,
-              fields: [
-                {
-                  name: "Rolls",
-                  value: whiteRollsOut.toString()
-                }
-              ]
+              title: title,
+              fields: fields
             }
           ]
-        };
-
+        }
+      },
+      buildAndPushPayload: function (rollFormula, fields) {
+        const payload = this.buildPayload(rollFormula, fields);
         this.pushPayload(payload);
       }
     }
@@ -512,12 +510,11 @@
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+  #app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    margin-top: 60px;
+  }
 </style>
