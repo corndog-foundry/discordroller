@@ -1,16 +1,20 @@
 <template>
   <div>
     <form @submit.prevent="submitKey">
-      <p>Enter your Webhook URL here:</p>
+      <p>Enter your <b>Webhook URL</b> here:</p>
       <input type="text" v-model="newKey" required/>
 
-      <p>Enter a nickname here:</p>
+      <p>Enter a <b>nickname</b> here:</p>
       <input type="text" v-model="newNick" required/>
 
       <p>Verbose mode? (Display the result of all rolls)</p>
       <input type="checkbox" v-model="newVerboseMode"/>
 
+      <p>Add dice labels?</p>
+      <input type="checkbox" v-model="newRollLabels"/>
+
       <div></div>
+
       <button>Start</button>
     </form>
   </div>
@@ -24,11 +28,12 @@
         newKey: '',
         newNick: '',
         newVerboseMode: false,
+        newRollLabels: false
       }
     },
     methods: {
       submitKey: function () {
-        this.$emit('change:DiscordKey', this.newKey, this.newNick, this.newVerboseMode);
+        this.$emit('change:DiscordKey', this.newKey, this.newNick, this.newVerboseMode, this.newRollLabels);
       }
     }
   }
@@ -37,5 +42,10 @@
 <style scoped>
   button {
     margin-top: 25px;
+  }
+
+  table {
+    justify-content: center;
+    align-content: center;
   }
 </style>

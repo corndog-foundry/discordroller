@@ -1,40 +1,50 @@
 <template>
-  <div id="app" :class="{ dark: darkTheme, light: !darkTheme }">
-    <h1>Discord Roller</h1>
+  <div id="app">
+    <h1 class="title" @click="revertDiscordKey">Discord Roller</h1>
     <VersionText
         v-if="!keyInput"
         :version="version"
     />
 
     <div v-if="keyInput">
-      <label>
-        Roll Type:
-        <select v-model="selectedType">
-          <option v-for="type in diceTypes" :key="type">{{ type }}</option>
-        </select>
-      </label>
-      <label>
-        Roll Context:
-        <input type="text" v-model="rollContext"/>
-      </label>
+      <div class="top-selects">
+        <label>
+          Roll Type:
+          <select v-model="selectedType">
+            <option v-for="type in diceTypes" :key="type">{{ type }}</option>
+          </select>
+        </label>
+        <label>
+          Roll Context:
+          <input type="text" v-model="rollContext"/>
+        </label>
+      </div>
 
       <hr>
 
-      <Roller
+      <StandardRoller
           v-if="selectedType === 'Standard'"
           @event:Roll="standardRoll"
-          @revert:DiscordKey="revertDiscordKey"
+          :rollLabels = "rollLabels"
       />
 
       <StarWarsRoller
         v-if="selectedType === 'Star Wars / Genesys'"
         @event:StandardRoll="starWarsRoll"
         @event:ForceRoll="starWarsForceRoll"
+        :rollLabels = "rollLabels"
       />
 
       <VampireRoller
         v-if="selectedType === 'Vampire the Masquerade 5e'"
         @event:Roll="vampireRoll"
+        :rollLabels = "rollLabels"
+      />
+
+      <ShiverRoller
+        v-if="selectedType === 'SHIVER'"
+        @event:Roll="shiverRoll"
+        :rollLabels = "rollLabels"
       />
     </div>
     <GetKey
@@ -45,21 +55,23 @@
 </template>
 
 <script>
-  import GetKey from "@/components/GetKey";
-  import Roller from "@/components/Roller";
   import StarWarsRoller from "@/components/StarWarsRoller";
   import VampireRoller from "@/components/VampireRoller";
   import VersionText from "@/components/VersionText";
   import { version } from '../package.json';
+  import GetKey from "@/components/GetKey";
+  import StandardRoller from "@/components/StandardRoller";
+  import ShiverRoller from "@/components/ShiverRoller";
 
   export default {
     name: 'App',
     components: {
+      ShiverRoller,
+      StandardRoller,
+      GetKey,
       VersionText,
       VampireRoller,
       StarWarsRoller,
-      Roller,
-      GetKey
     },
     data () {
       return {
@@ -69,44 +81,107 @@
         diceTypes: [
             'Standard',
             'Star Wars / Genesys',
-            'Vampire the Masquerade 5e'
+            'Vampire the Masquerade 5e',
+            'SHIVER'
         ],
         selectedType: 'Standard',
         verboseMode: false,
         rollContext: '',
         version: version,
-        darkTheme: false
+        rollLabels: false
       }
     },
     methods: {
-      receiveDiscordKey: function (newKey, newNick, newVerboseMode) {
+      receiveDiscordKey: function (newKey, newNick, newVerboseMode, newRollLabels) {
         this.discordKey = newKey;
         this.userNick = newNick;
         this.verboseMode = newVerboseMode;
+        this.rollLabels = newRollLabels;
         this.keyInput = true;
       },
-      standardRoll: function (numDice, numSides, bonus) {
-        let result = parseInt(bonus);
-        let rolls = [];
+      standardRoll: function (nD4, nD6, nD8, nD10, nD12, nD20, bonus, rollFormula) {
+        let total = parseInt(bonus);
+        let fields = [];
 
-        for (let i = 0; i < numDice; i++) {
-          let roll = this.generate(numSides);
-          rolls.push(roll);
-          result += roll;
+        if (nD4 > 0) {
+          let d4Out = [];
+
+          for (let i = 0; i < nD4; i++) {
+            let res = this.generate(4);
+            d4Out.push(res);
+            total += res;
+          }
+
+          fields.push({ name: 'D4 Rolls', value: d4Out.toString()})
         }
 
-        let rollFormula = `${numDice}d${numSides}`;
-        if (bonus > 0) rollFormula += ` + ${bonus}`;
-        else if (bonus < 0) rollFormula += ` - ${Math.abs(bonus)}`;
+        if (nD6 > 0) {
+          let d6Out = [];
 
-        rollFormula += ` = ${result}`
+          for (let i = 0; i < nD6; i++) {
+            let res = this.generate(6);
+            d6Out.push(res);
+            total += res;
+          }
 
-        let fields = [];
-        if (this.verboseMode) fields = [{ name: "Rolls", value: rolls.toString() }]
+          fields.push({ name: 'D6 Rolls', value: d6Out.toString()})
+        }
 
-        this.buildAndPushPayload(rollFormula, fields);
+        if (nD8 > 0) {
+          let d8Out = [];
+
+          for (let i = 0; i < nD8; i++) {
+            let res = this.generate(8);
+            d8Out.push(res);
+            total += res;
+          }
+
+          fields.push({ name: 'D8 Rolls', value: d8Out.toString()})
+        }
+
+        if (nD10 > 0) {
+          let d10Out = [];
+
+          for (let i = 0; i < nD10; i++) {
+            let res = this.generate(10);
+            d10Out.push(res);
+            total += res;
+          }
+
+          fields.push({ name: 'D10 Rolls', value: d10Out.toString()})
+        }
+
+        if (nD12 > 0) {
+          let d12Out = [];
+
+          for (let i = 0; i < nD12; i++) {
+            let res = this.generate(12);
+            d12Out.push(res);
+            total += res;
+          }
+
+          fields.push({ name: 'D12 Rolls', value: d12Out.toString()})
+        }
+
+        if (nD20 > 0) {
+          let d20Out = [];
+
+          for (let i = 0; i < nD20; i++) {
+            let res = this.generate(20);
+            d20Out.push(res);
+            total += res;
+          }
+
+          fields.push({ name: 'D20 Rolls', value: d20Out.toString()})
+        }
+
+        if (!this.verboseMode) fields = [];
+
+        let formula = `${rollFormula} = ${total}`;
+
+        this.buildAndPushPayload(formula, fields);
       },
-      vampireRoll: function (numBlackDice, numRedDice) {
+      vampireRoll: function (numBlackDice, numRedDice, rollFormula) {
         let blackRolls = [];
         let redRolls = [];
 
@@ -167,13 +242,9 @@
 
         successes += criticals;
 
-        let rollFormula = '';
-
-        if (numBlackDice > 0) rollFormula = this.expandRollFormula(rollFormula, `${numBlackDice} :black_circle:`);
-        if (numRedDice > 0) rollFormula = this.expandRollFormula(rollFormula, `${numRedDice} :red_circle:`);
-
-        rollFormula += ` = ${successes} successes.`;
-
+        let formula = `${rollFormula} = ${successes} successes.`;
+        formula = formula.replace('normal', ':black_circle:')
+        formula = formula.replace('hunger', ':red_circle:')
         const fields = [];
 
         if (this.verboseMode) {
@@ -184,7 +255,7 @@
         if (messyCritical) fields.push({name: "Messy Critical?", value: "Yes"})
         if (bestialFailure) fields.push({name: "Bestial Failure?", value: "Yes"})
 
-        this.buildAndPushPayload(rollFormula, fields);
+        this.buildAndPushPayload(formula, fields);
       },
       generate: function (max) {
         return 1 + Math.floor(Math.random() * max);
@@ -207,7 +278,15 @@
           return expansion;
         }
       },
-      starWarsRoll: function (nBlue, nGreen, nYellow, nBlack, nPurple, nRed) {
+      expandResultFormula: function (rollFormula, expansion) {
+        if (rollFormula !== '') {
+          rollFormula += ` | ${expansion}`;
+          return rollFormula;
+        } else {
+          return expansion;
+        }
+      },
+      starWarsRoll: function (nBlue, nGreen, nYellow, nBlack, nPurple, nRed, rollFormula) {
         let successes = 0;
         let advantages = 0;
         let triumph = false;
@@ -221,8 +300,6 @@
         let redRollsOut = [];
 
         let fields = [];
-
-        let rollFormula = '';
 
         if (nBlue > 0) {
           for (let i = 0; i < nBlue; i++) {
@@ -252,7 +329,6 @@
           }
 
           if (this.verboseMode) fields.push({name: "Boost Rolls", value: blueRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nBlue} :blue_circle:`);
         }
 
         if (nBlack > 0) {
@@ -276,7 +352,6 @@
           }
 
           if (this.verboseMode) fields.push({name: "Setback Rolls", value: blackRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nBlack} :black_circle:`);
         }
 
         if (nGreen > 0) {
@@ -312,7 +387,6 @@
           }
 
           if (this.verboseMode) fields.push({name: "Ability Rolls", value: greenRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nGreen} :green_circle:`);
         }
 
         if (nPurple > 0) {
@@ -348,7 +422,6 @@
           }
 
           if (this.verboseMode) fields.push({name: "Difficulty Rolls", value: purpleRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nPurple} :purple_circle:`);
         }
 
         if (nYellow > 0) {
@@ -391,7 +464,6 @@
           }
 
           if (this.verboseMode) fields.push({name: "Proficiency Rolls", value: yellowRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nYellow} :yellow_circle:`);
         }
 
         if (nRed > 0) {
@@ -434,18 +506,23 @@
           }
 
           if (this.verboseMode) fields.push({name: "Challenge Rolls", value: redRollsOut.toString()})
-          rollFormula = this.expandRollFormula(rollFormula, `${nRed} :red_circle:`);
         }
 
         if (triumph) fields.push({name: "Triumph?", value: "Yes"});
         if (despair) fields.push({name: "Despair?", value: "Yes"});
 
-        let sResult = successes > 0 ? `${successes} successes` : `${Math.abs(successes)} failures`;
-        let aResult = advantages > 0 ? `${advantages} advantages` : `${Math.abs(advantages)} threats`;
+        let sResult = successes > 0 ? `Success (${successes})` : `Failure (${Math.abs(successes)})`;
+        let aResult = advantages > 0 ? `Advantage (${advantages})` : `Threat (${Math.abs(advantages)})`;
 
-        rollFormula += ` = ${sResult} + ${aResult}`;
+        let formula = `${rollFormula} = ${sResult} + ${aResult}`;
+        formula = formula.replace('boost', ':blue_circle:');
+        formula = formula.replace('setback', ':black_circle:');
+        formula = formula.replace('ability', ':green_circle:');
+        formula = formula.replace('difficulty', ':purple_circle:');
+        formula = formula.replace('proficiency', ':yellow_circle:');
+        formula = formula.replace('challenge', ':red_circle:');
 
-        this.buildAndPushPayload(rollFormula, fields);
+        this.buildAndPushPayload(formula, fields);
       },
       starWarsForceRoll: function (nWhite) {
         let darkSidePoints = 0;
@@ -502,8 +579,97 @@
         }
       },
       buildAndPushPayload: function (rollFormula, fields) {
+        fields.push({ name: 'Roll Type', value: this.selectedType})
         const payload = this.buildPayload(rollFormula, fields);
         this.pushPayload(payload);
+      },
+      shiverRoll: function (nSkill, nTalent, rollFormula) {
+        let strange = 0;
+        let grit = 0;
+        let wit = 0;
+        let heart = 0;
+        let smarts = 0;
+        let luck = 0;
+        let talent = 0;
+
+        let skillRollsOut = [];
+        let talentRollsOut = [];
+        let fields = [];
+
+        if (nSkill > 0) {
+          for (let i = 0; i < nSkill; i++) {
+            switch (this.generate(6)) {
+              case 1:
+                strange += 1;
+                skillRollsOut.push(':purple_circle:');
+                break;
+              case 2:
+                grit += 1;
+                skillRollsOut.push(':orange_circle:');
+                break;
+              case 3:
+                wit += 1;
+                skillRollsOut.push(':blue_circle:');
+                break;
+              case 4:
+                heart += 1;
+                skillRollsOut.push(':red_circle:');
+                break;
+              case 5:
+                smarts += 1;
+                skillRollsOut.push(':yellow_circle:');
+                break;
+              case 6:
+                luck += 1;
+                skillRollsOut.push(':green_circle:');
+                break;
+            }
+          }
+
+          if (this.verboseMode) fields.push({ name: 'Skill Rolls', value: skillRollsOut.toString()})
+        }
+
+        if (nTalent > 0) {
+          for (let i = 0; i < nTalent; i++) {
+            switch (this.generate(8)) {
+              case 1:
+                strange += 2;
+                talentRollsOut.push(':purple_circle: :purple_circle:');
+                break;
+              case 2:
+              case 3:
+                strange++;
+                talentRollsOut.push(':purple_circle:');
+                break;
+              case 4:
+              case 5:
+              case 6:
+                talent++;
+                talentRollsOut.push(':white_circle:');
+                break;
+              case 7:
+              case 8:
+                talent += 2;
+                talentRollsOut.push(':white_circle: :white_circle:');
+                break;
+            }
+          }
+
+          if (this.verboseMode) fields.push({ name: 'Talent Rolls', value: talentRollsOut.toString()})
+        }
+
+        let result = '';
+
+        result = this.expandResultFormula(result, `${strange} :purple_circle:`)
+        result = this.expandResultFormula(result, `${grit + talent} :orange_circle:`)
+        result = this.expandResultFormula(result, `${wit + talent} :blue_circle:`)
+        result = this.expandResultFormula(result, `${heart + talent} :red_circle:`)
+        result = this.expandResultFormula(result, `${smarts + talent} :yellow_circle:`)
+        result = this.expandResultFormula(result, `${luck + talent} :green_circle:`)
+
+        let out = `${rollFormula} = ${result}`
+
+        this.buildAndPushPayload(out, fields);
       }
     }
   }
@@ -516,5 +682,26 @@
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     margin-top: 60px;
+  }
+
+  * {
+    background-color: #2c3e50;
+    color: #42b983;
+  }
+
+  .top-selects {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  button:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .title:hover {
+    color: white;
+    cursor: default;
   }
 </style>
