@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <h1 class="title" @click="revertDiscordKey">Discord Roller</h1>
+    <div class="icon" v-if="!keyInput"/>
+    <h1 class="title" @click="revertDiscordKey">Dicecord</h1>
     <VersionText
         v-if="!keyInput"
         :version="version"
@@ -345,7 +346,7 @@
                 break;
               case 5:
               case 6:
-                blueRollsOut.push('T');
+                blackRollsOut.push('T');
                 advantages--;
                 break;
             }
@@ -686,7 +687,9 @@
 
   * {
     background-color: #2c3e50;
-    color: #42b983;
+    color: #CFF7FF;
+    justify-content: center;
+    align-content: center;
   }
 
   .top-selects {
@@ -703,5 +706,13 @@
   .title:hover {
     color: white;
     cursor: default;
+  }
+
+  .icon {
+    background-image: url("img/icon-smaller.png");
+    background-repeat: no-repeat;
+    background-size: auto;
+    height: 256px;
+    background-position: center;
   }
 </style>

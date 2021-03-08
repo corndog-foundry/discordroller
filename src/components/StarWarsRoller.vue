@@ -1,57 +1,64 @@
 <template>
     <div>
-      <div class="roll-text" @click="standardRoll">
-        <p>{{ rollFormula }}</p>
+      <label>
+        <select v-model="rollType" class="type-selector">
+          <option v-for="type in rollTypes" :key="type">{{ type }}</option>
+        </select>
+      </label>
+
+      <div v-if="rollType === 'Standard'">
+        <div class="roll-text" @click="standardRoll">
+          <p>{{ rollFormula }}</p>
+        </div>
+
+        <div class="die-row">
+          <div/>
+          <div>
+            <button class="boost" @click="bumpBlue"/>
+            <p v-if="rollLabels">Boost</p>
+          </div>
+
+          <div>
+            <button class="ability" @click="bumpGreen"/>
+            <p v-if="rollLabels">Ability</p>
+          </div>
+
+          <div>
+            <button class="proficiency" @click="bumpYellow"/>
+            <p v-if="rollLabels">Proficiency</p>
+          </div>
+          <div/>
+        </div>
+
+        <div class="die-row">
+          <div/>
+
+          <div>
+            <button class="setback" @click="bumpBlack"/>
+            <p v-if="rollLabels">Setback</p>
+          </div>
+
+          <div>
+            <button class="difficulty" @click="bumpPurple"/>
+            <p v-if="rollLabels">Difficulty</p>
+          </div>
+
+          <div>
+            <button class="challenge" @click="bumpRed"/>
+            <p v-if="rollLabels">Challenge</p>
+          </div>
+          <div/>
+        </div>
       </div>
-
-      <div class="die-row">
-        <div/>
-        <div>
-          <button class="boost" @click="bumpBlue"/>
-          <p v-if="rollLabels">Boost</p>
+      <div v-else>
+        <div class="roll-text" @click="forceRoll">
+          <p v-if="nWhite > 0">{{ nWhite }} force</p>
         </div>
 
         <div>
-          <button class="ability" @click="bumpGreen"/>
-          <p v-if="rollLabels">Ability</p>
+          <button class="force" @click="bumpWhite"/>
+          <p v-if="rollLabels">Force</p>
         </div>
-
-        <div>
-          <button class="proficiency" @click="bumpYellow"/>
-          <p v-if="rollLabels">Proficiency</p>
-        </div>
-        <div/>
-      </div>
-
-      <div class="die-row">
-        <div/>
-
-        <div>
-          <button class="setback" @click="bumpBlack"/>
-          <p v-if="rollLabels">Setback</p>
-        </div>
-
-        <div>
-          <button class="difficulty" @click="bumpPurple"/>
-          <p v-if="rollLabels">Difficulty</p>
-        </div>
-
-        <div>
-          <button class="challenge" @click="bumpRed"/>
-          <p v-if="rollLabels">Challenge</p>
-        </div>
-        <div/>
-      </div>
-
-      <hr>
-
-      <div class="roll-text" @click="forceRoll">
-        <p v-if="nWhite > 0">{{ nWhite }} force</p>
-      </div>
-
-      <div>
-        <button class="force" @click="bumpWhite"/>
-        <p v-if="rollLabels">Force</p>
       </div>
     </div>
 </template>
@@ -69,7 +76,12 @@
         nYellow: 0,
         nRed: 0,
         nWhite: 0,
-        rollFormula: ''
+        rollFormula: '',
+        rollType: 'Standard',
+        rollTypes: [
+            'Standard',
+            'Force'
+        ]
       }
     },
     methods: {
@@ -237,5 +249,9 @@
   p {
     background-color: inherit;
     color: inherit;
+  }
+
+  .type-selector {
+    margin-bottom: 10px;
   }
 </style>

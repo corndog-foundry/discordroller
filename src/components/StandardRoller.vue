@@ -48,8 +48,11 @@
         <div/>
       </div>
 
-      <div class="bonus-button" @click="getBonus">
-        <p class="bonus-text">BONUS</p>
+      <div class="bonus-section">
+        <h3>Bonus: </h3>
+        <label>
+          <input class="bonus-input" type="number" v-model="bonus" min="-99" max="99" @change="calcRollFormula"/>
+        </label>
       </div>
     </div>
   </div>
@@ -119,6 +122,12 @@
             formula += `${this.bonus}`
           } else {
             formula += ` + ${this.bonus}`
+          }
+        } else if (this.bonus < 0) {
+          if (formula === '') {
+            formula += `${this.bonus}`
+          } else {
+            formula += ` - ${Math.abs(this.bonus)}`
           }
         }
 
@@ -256,23 +265,13 @@
     color: inherit;
   }
 
-  .bonus-button {
-    background-color: #42b983;
-    height: 128px;
-    width: 128px;
-    margin: auto;
-    border: 1px solid black;
-    border-radius: 20px;
+  .bonus-section {
+    display: flex;
+    flex-direction: row
   }
 
-  .bonus-button:hover {
-    background-color: white;
-  }
-
-  .bonus-text {
-    color: #2c3e50;
-    padding-top: 25px;
-    font-weight: bolder;
-    font-size: x-large;
+  .bonus-input {
+    margin-left: 20px;
+    margin-top: 19px;
   }
 </style>
